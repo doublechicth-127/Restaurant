@@ -1,0 +1,60 @@
+import React, { useState, useEffect } from "react";
+
+function App() {
+  const [restaurants, setRestaurants] = useState([]);
+  const [form, setForm] = useState({ restaurant_id: "", date: "", time: "", party_size: 1, name: "", phone: "", email: "" });
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:4000/restaurants")
+      .then(res => res.json())
+      .then(setRestaurants);
+  }, []);
+
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    fetch("http://localhost:4000/reserve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form)
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setMessage("Reservation confirmed!");
+        else setMessage(data.error || "Error making reservation");
+      });
+  }
+
+  return (
+    <div>
+      <h1>Restaurant Reservation</h1>
+      <ul>
+        {restaurants.map(r => (
+          <li key={r.id}><b>{r.name}</b>: {r.description}</li>
+        ))}
+      </ul>
+      <form onSubmit={handleSubmit}>
+        <select name="restaurant_id" value={form.restaurant_id} onChange={handleChange} required>
+          <option value="">Select Restaurant</option>
+          {restaurants.map(r => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+        <input type="date" name="date" value={form.date} onChange={handleChange} required />
+        <input type="time" name="time" value={form.time} min="06:00" max="23:00" onChange={handleChange} required />
+        <input type="number" name="party_size" value={form.party_size} min="1" max="30" onChange={handleChange} required />
+        <input type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your Name" required />
+        <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="Phone" required />
+        <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email" required />
+        <button type="submit">Reserve</button>
+      </form>
+      {message && <p>{message}</p>}
+    </div>
+  );
+}
+
+export default App;
